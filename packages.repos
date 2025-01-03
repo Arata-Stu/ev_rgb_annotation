@@ -1,0 +1,15 @@
+repositories:
+  
+  ## event 
+  event_recording:
+    type: git
+    url: https://github.com/Arata-Stu/event_recording.git
+    version: main
+
+  ## frame camera
+  flycapture_camera_driver:
+    type: git
+    url: https://github.com/Arata-Stu/flycapture_camera_driver.git
+    version: master
+
+ 

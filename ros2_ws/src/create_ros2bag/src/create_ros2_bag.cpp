@@ -18,7 +18,7 @@ void add_topic(std::shared_ptr<rosbag2_cpp::writers::SequentialWriter> writer,
                const std::string &topic_name,
                const std::string &message_type) {
     rosbag2_storage::TopicMetadata topic_metadata{
-        topic_name, message_type, "cdr", "sensor_msgs::msg::Image"};
+        topic_name, message_type, "cdr", ""};
     writer->create_topic(topic_metadata);
 }
 
@@ -97,15 +97,19 @@ int main(int argc, char *argv[]) {
         std::sort(rgb_files_2.begin(), rgb_files_2.end());
     }
 
-    // ダウンサンプリング
     std::vector<std::tuple<std::string, int64_t, int64_t>> mono_data = extract_timestamps_from_png(mono_files);
-    mono_data.resize(mono_data.size() / downsample_rate);
+
+    // ダウンサンプリング
+    std::vector<std::tuple<std::string, int64_t, int64_t>> downsampled_mono_data;
+    for (size_t i = 0; i < mono_data.size(); i += downsample_rate) {
+        downsampled_mono_data.push_back(mono_data[i]);
+    }
 
     // イメージ処理と書き込み
-    // RGB画像処理と書き込み
-    for (size_t i = 0; i < mono_data.size(); ++i) {
-        const auto &[mono_path, seconds, nanoseconds] = mono_data[i];
-        // モノクロ画像処理（既存のコード）
+    for (size_t i = 0; i < downsampled_mono_data.size(); ++i) {
+        const auto &[mono_path, seconds, nanoseconds] = downsampled_mono_data[i];
+
+        // モノクロ画像処理
         cv::Mat mono_img = cv::imread(mono_path, cv::IMREAD_GRAYSCALE);
         if (!mono_img.empty()) {
             auto mono_msg = std::make_shared<sensor_msgs::msg::Image>();
@@ -139,7 +143,7 @@ int main(int argc, char *argv[]) {
             if (!rgb_img.empty()) {
                 auto rgb_msg = std::make_shared<sensor_msgs::msg::Image>();
                 rgb_msg->header.stamp.sec = seconds;
-                rgb_msg->header.stamp.nanosec = nanoseconds + 1;  // nanosec + 1
+                rgb_msg->header.stamp.nanosec = nanoseconds + 1;
                 rgb_msg->height = rgb_img.rows;
                 rgb_msg->width = rgb_img.cols;
                 rgb_msg->encoding = "rgb8";
@@ -169,7 +173,7 @@ int main(int argc, char *argv[]) {
             if (!rgb_img_2.empty()) {
                 auto rgb_msg_2 = std::make_shared<sensor_msgs::msg::Image>();
                 rgb_msg_2->header.stamp.sec = seconds;
-                rgb_msg_2->header.stamp.nanosec = nanoseconds + 2;  // nanosec + 2
+                rgb_msg_2->header.stamp.nanosec = nanoseconds + 2;
                 rgb_msg_2->height = rgb_img_2.rows;
                 rgb_msg_2->width = rgb_img_2.cols;
                 rgb_msg_2->encoding = "rgb8";
@@ -193,6 +197,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
 
     rclcpp::shutdown();
     return 0;

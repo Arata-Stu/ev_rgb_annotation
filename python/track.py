@@ -32,7 +32,7 @@ def process_images(base_dir, target_classes):
         return
 
     # YOLOモデルをロード（任意の重みファイルに置き換えてください）
-    model = YOLO("yolo11n.pt")
+    model = YOLO("yolo11x.pt")
 
     # 各カメラディレクトリを処理
     for camera_dir in camera_dirs:

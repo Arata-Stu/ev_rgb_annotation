@@ -34,6 +34,7 @@ std::vector<std::tuple<std::string, int64_t, int64_t>> extract_timestamps_from_p
     return timestamps;
 }
 
+
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("rosbag2_writer");
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]) {
         add_topic(writer, rgb_topic_2, "sensor_msgs/msg/Image");
     }
 
-    // MonoとRGBの画像ファイルリストを取得
+    // ファイルリストの取得とソート
     std::vector<std::string> mono_files, rgb_files, rgb_files_2;
     for (const auto &entry : fs::directory_iterator(mono_folder)) {
         mono_files.push_back(entry.path().string());
@@ -97,9 +98,8 @@ int main(int argc, char *argv[]) {
         std::sort(rgb_files_2.begin(), rgb_files_2.end());
     }
 
+    // Monoトピックのダウンサンプル後のデータを取得
     std::vector<std::tuple<std::string, int64_t, int64_t>> mono_data = extract_timestamps_from_png(mono_files);
-
-    // ダウンサンプリング
     std::vector<std::tuple<std::string, int64_t, int64_t>> downsampled_mono_data;
     for (size_t i = 0; i < mono_data.size(); i += downsample_rate) {
         downsampled_mono_data.push_back(mono_data[i]);
@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
         }
 
         // RGB画像処理 (rgb_folder)
-        if (i < rgb_files.size()) {
-            cv::Mat rgb_img = cv::imread(rgb_files[i], cv::IMREAD_COLOR);
+        if (i * downsample_rate < rgb_files.size()) {
+            cv::Mat rgb_img = cv::imread(rgb_files[i * downsample_rate], cv::IMREAD_COLOR);
             if (!rgb_img.empty()) {
                 auto rgb_msg = std::make_shared<sensor_msgs::msg::Image>();
                 rgb_msg->header.stamp.sec = seconds;
@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
         }
 
         // RGB画像処理 (rgb_folder_2)
-        if (!rgb_files_2.empty() && i < rgb_files_2.size()) {
-            cv::Mat rgb_img_2 = cv::imread(rgb_files_2[i], cv::IMREAD_COLOR);
+        if (!rgb_files_2.empty() && i * downsample_rate < rgb_files_2.size()) {
+            cv::Mat rgb_img_2 = cv::imread(rgb_files_2[i * downsample_rate], cv::IMREAD_COLOR);
             if (!rgb_img_2.empty()) {
                 auto rgb_msg_2 = std::make_shared<sensor_msgs::msg::Image>();
                 rgb_msg_2->header.stamp.sec = seconds;
@@ -197,7 +197,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
 
     rclcpp::shutdown();
     return 0;

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- イベントカメラのlaunchファイル -->
+    <include file="$(find-pkg-share event_recording)/launch/event_recorder.launch.xml"/>
+
+    <!-- RGBカメラのlaunchファイル -->
+    <include file="$(find-pkg-share flycapture_camera_driver)/launch/camera_recorder.launch.xml"/>
+</launch>

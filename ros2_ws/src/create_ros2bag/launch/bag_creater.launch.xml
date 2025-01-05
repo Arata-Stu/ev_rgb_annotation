@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="param" default="$(find-pkg-share create_ros2bag)/config/params.yaml"/>
+
+    <node pkg="create_ros2bag" exec="create_ros2bag" name="create_ros2bag" output="screen">
+        <param from="$(var param)"/>
+    </node>
+</launch>

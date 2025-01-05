@@ -1,0 +1,13 @@
+/**:
+  ros__parameters:
+    rosbag_folder: './output/rosbag/'
+    mono_folder: '/path/to/reconstruct/'
+    rgb_folder: ''
+    rgb_folder_2: ''
+    mono_topic: '/camera/mono/image_raw'
+    rgb_topic: '/camera/rgb/image_raw'
+    rgb_topic_2: '/camera/rgb2/image_raw'
+    downsample_rate: 6
+
+
+

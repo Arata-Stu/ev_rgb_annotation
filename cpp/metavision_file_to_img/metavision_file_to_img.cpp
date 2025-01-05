@@ -29,32 +29,39 @@ namespace po = boost::program_options;
 
 void save_frame_as_image(const cv::Mat &frame, const std::string &output_dir, int frame_number) {
     std::ostringstream filename;
-    filename << output_dir << "/frame_" << std::setw(6) << std::setfill('0') << frame_number << ".jpg";
+    filename << output_dir << "/frame_" << std::setw(16) << std::setfill('0') << frame_number << ".jpg";
     if (!cv::imwrite(filename.str(), frame)) {
         MV_LOG_ERROR() << "Failed to save frame as image: " << filename.str();
     }
 }
 
-int main(int argc, char *argv[]) {
-    std::string in_event_file_path;
-    std::string output_image_dir;
+std::string find_hdf5_file(const std::string &directory) {
+    boost::filesystem::directory_iterator end_iter;
+    for (boost::filesystem::directory_iterator dir_iter(directory); dir_iter != end_iter; ++dir_iter) {
+        if (boost::filesystem::is_regular_file(dir_iter->status()) && dir_iter->path().extension() == ".hdf5") {
+            return dir_iter->path().string();
+        }
+    }
+    throw std::runtime_error("No HDF5 file found in directory: " + directory);
+}
 
+int main(int argc, char *argv[]) {
+    std::string base_dir;
     uint32_t accumulation_time;
     double slow_motion_factor;
     const std::uint16_t fps(30);
 
     const std::string program_desc(
-        "Tool to generate images from a RAW or HDF5 file.\n\n"
+        "Tool to generate images from an HDF5 file located in a specific directory structure.\n\n"
         "The frame rate of the output is fixed to 30 FPS.\n"
         "Use the slow motion factor (-s option) to adjust the playback speed.\n"
-        "Frames will be saved as JPEG images in the specified output directory.\n");
+        "Frames will be saved as JPEG images in the output directory.\n");
 
     po::options_description options_desc("Options");
     // clang-format off
     options_desc.add_options()
         ("help,h", "Produce help message.")
-        ("input-event-file,i",   po::value<std::string>(&in_event_file_path)->required(), "Path to input event file (RAW or HDF5).")
-        ("output-image-dir,o",   po::value<std::string>(&output_image_dir)->required(), "Directory to save output images. Frames will be saved as JPEG files.")
+        ("base-dir,b",         po::value<std::string>(&base_dir)->required(), "Base directory containing the events/ directory with HDF5 files and output images directory.")
         ("accumulation-time,a",  po::value<uint32_t>(&accumulation_time)->default_value(10000), "Accumulation time (in us).")
         ("slow-motion-factor,s", po::value<double>(&slow_motion_factor)->default_value(1.), "Slow motion factor to apply to generate the frames.")
     ;
@@ -79,6 +86,17 @@ int main(int argc, char *argv[]) {
 
     if (slow_motion_factor <= 0) {
         MV_LOG_ERROR() << "Input slow motion factor must be greater than 0. Got" << slow_motion_factor;
+        return 1;
+    }
+
+    std::string events_dir = base_dir + "/events";
+    std::string output_image_dir = base_dir + "/images/events";
+
+    std::string in_event_file_path;
+    try {
+        in_event_file_path = find_hdf5_file(events_dir);
+    } catch (const std::runtime_error &e) {
+        MV_LOG_ERROR() << e.what();
         return 1;
     }
 

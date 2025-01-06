@@ -54,5 +54,16 @@ for dir in "$OUTPUT_DIR"/*/; do
     # ダブルスラッシュを防ぐため、パスを正規化
     normalized_dir=$(realpath "$dir")
     echo "$normalized_dir"
+
+    ## フレームをアノテーション
+    python3 python/track.py -b "$normalized_dir" 
+
+    ## アノテーションを変換
+    python3 python/convert_labels.py -b "$normalized_dir" -m "$HOMOGRAPHY_MATRIX"
+
+
   fi
+
+## 終了
+echo "処理が完了しました。"
 done

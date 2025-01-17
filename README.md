@@ -9,6 +9,7 @@ cd cpp/events_to_img/
 mkdir build && cd build
 cmake ..
 make
+cd ../../..
 
 cd cpp/metavision_file_to_img/
 mkdir build && cd build

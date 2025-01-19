@@ -1,37 +1,9 @@
 import os
 import numpy as np
 import cv2
-from omegaconf import OmegaConf
 import yaml
 
-# 1. キャリブレーションデータの読み込み
-def load_calibration_data(yaml_file_path):
-    config = OmegaConf.load(yaml_file_path)
-    return config
-
-def create_intrinsic_matrix(intrinsics):
-    fx, fy, cx, cy = intrinsics
-    K = np.array([
-        [fx, 0, cx],
-        [0, fy, cy],
-        [0,  0,  1]
-    ])
-    return K
-
-def get_distortion_coeffs(distortion_coeffs):
-    return np.array(distortion_coeffs)
-
-def initialize_calibration(yaml_file_path):
-    config = load_calibration_data(yaml_file_path)
-    cameras = {}
-    for cam_key in config.keys():
-        cam_data = config[cam_key]
-        K = create_intrinsic_matrix(cam_data.intrinsics)
-        distortion = get_distortion_coeffs(cam_data.distortion_coeffs)
-        cameras[cam_key] = {"K": K, "distortion": distortion}
-    return cameras
-
-# 2. ホモグラフィ行列の計算
+# 1. ホモグラフィ行列の計算
 def compute_homography(src_points, dst_points):
     H, _ = cv2.findHomography(src_points, dst_points, method=cv2.RANSAC)
     return H
@@ -42,7 +14,7 @@ def apply_homography(H, points):
     transformed_points = transformed_points_h[:, :2] / transformed_points_h[:, 2][:, np.newaxis]
     return transformed_points
 
-# 3. 対応点の手動選択機能
+# 2. 対応点の手動選択機能
 def select_points_dual_view(image1, image2):
     points1 = []
     points2 = []
@@ -84,18 +56,17 @@ def select_points_dual_view(image1, image2):
     cv2.destroyAllWindows()
     return np.array(points1, dtype=np.float32), np.array(points2, dtype=np.float32)
 
-# 5. ホモグラフィ行列をYAMLファイルに保存
+# 3. ホモグラフィ行列をYAMLファイルに保存
 def save_homographies_to_yaml(homographies, output_file_path):
     with open(output_file_path, 'w') as file:
         yaml.dump({"homography_matrix": homographies}, file, default_flow_style=False)
 
-# 6. プロセス全体の実行例
+# 4. プロセス全体の実行例
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Compute homographies for images in structured directories.")
     parser.add_argument("-b", "--base_dir", required=True, help="Base directory containing image directories.")
-    parser.add_argument("-c", "--calibration_file", required=True, help="Path to the calibration file (YAML).")
     parser.add_argument("-o", "--output_yaml", default="./homography_matrix.yaml", help="Path to the output YAML file.")
     parser.add_argument("-f", "--frame_index", type=int, default=0, help="Index of the frame pair to process (default: 0).")
 
@@ -104,7 +75,6 @@ if __name__ == "__main__":
     base_dir = args.base_dir
     output_yaml = args.output_yaml
     frame_index = args.frame_index
-    calibration_data = initialize_calibration(args.calibration_file)
 
     # ディレクトリの取得
     camera_dirs = [d for d in os.listdir(os.path.join(base_dir, "images")) if "camera" in d]

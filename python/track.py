@@ -40,9 +40,7 @@ def process_images(base_dir, target_classes):
     
     for camera_dir in camera_dirs:
         camera_path = os.path.join(images_dir, camera_dir)
-        camera_label_dir = os.path.join(labels_dir, camera_dir)
-        os.makedirs(camera_label_dir, exist_ok=True)
-        output_file = os.path.join(camera_label_dir, f"{camera_dir}.npy")
+        output_file = os.path.join(labels_dir, f"{camera_dir}.npy")  # 修正: labels/cameraX.npy に保存
         
         image_files = sorted([
             f for f in os.listdir(camera_path)
@@ -98,7 +96,7 @@ def process_images(base_dir, target_classes):
             
             all_data.extend(output_data)
         
-        np.save(output_file, np.array(all_data, dtype=np.float32))
+        np.save(output_file, np.array(all_data, dtype=np.float32))  # 修正: labels/cameraX.npy に保存
         print(f"Saved: {output_file}")
 
 if __name__ == "__main__":
